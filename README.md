@@ -18,7 +18,7 @@
 
 ### 시도는 해봤으니 기록은 남긴다.
 1. workflow trigger
-  - master 브랜치에 push, pr 발생시 jobs 의 step 실행된다.(필요하다면 병렬 실행, 의존관계 설정해서 실행도 가능)
+  - master 브랜치에 push, pr 발생시 jobs 의 step 실행된다. 2번 각 step 은필요하다면 병렬 실행, 의존관계 설정해서 실행도 가능하다.
 ```
 on:
   push:
