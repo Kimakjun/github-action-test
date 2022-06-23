@@ -18,59 +18,58 @@
 
 ### 시도는 해봤으니 기록은 남긴다.
 1. workflow trigger
-  - master 브랜치에 push, pr 발생시 jobs 의 step 실행된다. 2번 각 step 은필요하다면 병렬 실행, 의존관계 설정해서 실행도 가능하다.
-```
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-```
+    - master 브랜치에 push, pr 발생시 jobs 의 step 실행된다. 2번 각 step 은필요하다면 병렬 실행, 의존관계 설정해서 실행도 가능하다.
+    ```
+    on:
+      push:
+        branches: [ "master" ]
+      pull_request:
+        branches: [ "master" ]
+    ```
 
 2. project build
-```
-# 해당 액션 job 은 ubuntu-18.04 에서 실행된다. 해당 CI 가 실행되는 서버를 설정하는 것
-jobs:
-  build:
-    runs-on: ubuntu-18.04
+    ```
+    # 해당 액션 job 은 ubuntu-18.04 에서 실행된다. 해당 CI 가 실행되는 서버를 설정하는 것
+    jobs:
+      build:
+        runs-on: ubuntu-18.04
 
-    steps:
-      # Checkout 액션을 사용(actions/checkout@v3)하면 간편하게 코드 저장소로 부터 CI 서버로 코드를 내려받을 수 있다. 즉 필수과정이다.
-      - uses: actions/checkout@v3
+        steps:
+          # Checkout 액션을 사용(actions/checkout@v3)하면 간편하게 코드 저장소로 부터 CI 서버로 코드를 내려받을 수 있다. 즉 필수과정이다.
+          - uses: actions/checkout@v3
 
-      # 자바 JDK 11 설치
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-      
-      # chmod +x 로 gradlew 에 실행권한 추가
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      
-      # 빌드 실행
-      - name: Run build
-        run: ./gradlew clean build -x test
-```
+          # 자바 JDK 11 설치
+          - name: Set up JDK 11
+            uses: actions/setup-java@v2
+            with:
+              java-version: '11'
+              distribution: 'adopt'
+
+          # chmod +x 로 gradlew 에 실행권한 추가
+          - name: Grant execute permission for gradlew
+            run: chmod +x gradlew
+
+          # 빌드 실행
+          - name: Run build
+            run: ./gradlew clean build -x test
+    ```
 3. ncp object storage 에 build 파일 zip 으로 압축하여 업로드 
-```
-      # $GITHUB_SHA 라는 변수는 Github 자체에서 커밋마다 생성하는 랜덤한 변수값이다. 업로드시 빌드파일이 같은이름으로 충돌되지않기 위해 사용한다. 
-      - name: Make zip file
-        run: zip -r ./$GITHUB_SHA.zip .
-        shell: bash
+    ```
+          # $GITHUB_SHA 라는 변수는 Github 자체에서 커밋마다 생성하는 랜덤한 변수값이다. 업로드시 빌드파일이 같은이름으로 충돌되지않기 위해 사용한다. 
+          - name: Make zip file
+            run: zip -r ./$GITHUB_SHA.zip .
+            shell: bash
 
-      # 신기하게도 NCP 에서 cli 명령어는 aws 를 사용한다. 빌드 파일을 NCP 오브젝트 스토리지에 업로드한다. 
-      - name: Upload build file to NCP
-        env:
-          AWS_ACCESS_KEY_ID:
-          AWS_SECRET_ACCESS_KEY:
-          AWS_REGION: kr
-        run: aws --endpoint-url=https://kr.object.ncloudstorage.com s3 cp ./$GITHUB_SHA.zip s3://hakjun-bucket/
-
-```
+          # 신기하게도 NCP 에서 cli 명령어는 aws 를 사용한다. 빌드 파일을 NCP 오브젝트 스토리지에 업로드한다. 
+          - name: Upload build file to NCP
+            env:
+              AWS_ACCESS_KEY_ID:
+              AWS_SECRET_ACCESS_KEY:
+              AWS_REGION: kr
+            run: aws --endpoint-url=https://kr.object.ncloudstorage.com s3 cp ./$GITHUB_SHA.zip s3://hakjun-bucket/
+    ```
 
 4. 업로드 후 ncp sourceDeploy 에 요청을 보내 ncp object storage zip 파일로 지정된 서버에서 배포 실행. 
-```
-방법 NOT FOUND
-```
+    ```
+    방법 NOT FOUND
+    ```
