@@ -7,7 +7,7 @@ public class TestCode {
 
     @Test
     public void test(){
-        System.out.println("test code2");
+        System.out.println("test code3");
     }
 
 }
