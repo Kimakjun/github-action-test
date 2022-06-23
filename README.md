@@ -69,7 +69,7 @@
             run: aws --endpoint-url=https://kr.object.ncloudstorage.com s3 cp ./$GITHUB_SHA.zip s3://hakjun-bucket/
     ```
 
-4. 업로드 후 ncp sourceDeploy 에 요청을 보내 ncp object storage zip 파일로 지정된 서버에서 배포 실행. 
+4. 업로드 후 ncp sourceDeploy 에 요청을 보내 ncp object storage 업로드 해놨던 zip 파일로 지정된 서버에서 배포 실행. 
     ```
     방법 NOT FOUND
     ```
