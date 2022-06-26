@@ -41,7 +41,7 @@ jobs:
         run: |
           docker build -t ${{secrets.DOCKER_REPO}} .
           docker tag ${{secrets.DOCKER_REPO}}:latest ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}:latest
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.$DOCKER_REPO}}
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}
 
 
 
