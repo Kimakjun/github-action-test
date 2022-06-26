@@ -25,28 +25,17 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '11'
-          distribution: 'adopt'
-        
+          distribution: 'temurin'
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      
-#      - name: Run test
-#        run: ./gradlew test
         
       - name: Run build
         run: ./gradlew clean build -x test
 
-      - name: Make zip file
-        run: zip -r ./$GITHUB_SHA.zip .
-        shell: bash
-
-      - name: Upload build file to NCP
-        env:
-          AWS_ACCESS_KEY_ID: WqCxdTAHmUzbh2FAV9Wz
-          AWS_SECRET_ACCESS_KEY: AQJVNnk74avEr2xSTv3R3mFwmbNNu2qegWRzEgpl
-          AWS_REGION: kr
-        run: aws --endpoint-url=https://kr.object.ncloudstorage.com s3 cp ./$GITHUB_SHA.zip s3://hakjun-bucket/
-#          aws --endpoint-url=https://kr.object.ncloudstorage.com
-#          s3 cp --recursive ./$GITHUB_SHA.zip
-#          s3://hakjun-bucket
+      - name: Docker build & push to push
+      run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker build Dockerfile -t ${{ secrets.DOCKER_REPO }}/hj-spring .
+          docker push ${{ secrets.DOCKER_REPO }}/hj-spring
 
