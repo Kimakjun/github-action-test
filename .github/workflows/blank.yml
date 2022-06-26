@@ -37,11 +37,14 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
 
-      - name: Docker build & push to push
+      - name: build and release to DockerHub
+        env:
+          NAME: dkd7142
+          REPO: hj-docker-repo
         run: |
-            docker build -t $DOCKER_REPO .
-            docker tag $DOCKER_REPO:latest $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
-            docker push $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
+          docker build -t $REPO .
+          docker tag $REPO:latest $NAME/$REPO:latest
+          docker push $NAME/$REPO:latest
 
 
 
