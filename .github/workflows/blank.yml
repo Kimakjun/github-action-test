@@ -39,7 +39,6 @@ jobs:
 
       - name: Docker build & push to push
         run: |
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             docker build -t $DOCKER_REPO .
             docker tag $DOCKER_REPO:latest $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
             docker push $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
