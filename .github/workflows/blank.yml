@@ -34,8 +34,8 @@ jobs:
         run: ./gradlew clean build -x test
 
       - name: Docker build & push to push
-      run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build Dockerfile -t ${{ secrets.DOCKER_REPO }}/hj-spring .
-          docker push ${{ secrets.DOCKER_REPO }}/hj-spring
+        run: |
+            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            docker build Dockerfile -t ${{ secrets.DOCKER_REPO }}/hj-spring .
+            docker push ${{ secrets.DOCKER_REPO }}/hj-spring
 
