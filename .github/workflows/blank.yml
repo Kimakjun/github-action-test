@@ -27,7 +27,7 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-        
+
       - name: Run build
         run: ./gradlew clean build -x test
 
@@ -37,14 +37,11 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
 
-      - name: build and release to DockerHub
-        env:
-          NAME: dkd7142
-          REPO: hj-docker-repo
+      - name: Docker build & push to push
         run: |
-          docker build -t $REPO .
-          docker tag $REPO:latest $NAME/$REPO:latest
-          docker push $NAME/$REPO:latest
+          docker build -t ${{secrets.$DOCKER_REPO}} .
+          docker tag ${{secrets.$DOCKER_REPO}}:latest ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.$DOCKER_REPO}}:latest
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.$DOCKER_REPO}}
 
 
 
