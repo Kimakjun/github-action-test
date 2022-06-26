@@ -34,7 +34,9 @@ jobs:
       - name: Docker build & push to push
         run: |
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            docker build -t ${{ secrets.DOCKER_REPO }}/hj-spring .
-            docker push ${{ secrets.DOCKER_REPO }}/hj-spring
+            docker build -t $REPO .
+            docker tag $DOCKER_REPO:latest $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
+            docker push $DOCKERHUB_USERNAME/$DOCKER_REPO:latest
+
 
 
