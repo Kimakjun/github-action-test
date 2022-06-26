@@ -55,7 +55,7 @@ jobs:
           password: ${{secrets.DOCKERHUB_TOKEN}}
       - name: Docker run
         run: |
-          docker rm -f $(docker ps -q -a)
+          docker rm -f $(docker ps -q -a) 2>/dev/null
           docker pull ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}
           docker run -itd -p 80:8080 --name hjspring ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}:latest
 
