@@ -1,75 +1,129 @@
-# Github-Action-Test
+**Github Actions?** 
+- github actions 란 github 에서 제공하는 CI/CD 를 편리하게 구축할 수 있도록 도와주는 서비스 
+- 자세한 내용: https://www.daleseo.com/github-actions-basics/
+- 문서: https://docs.github.com/en/actions
+- backend github actions test 레포: https://github.com/Kimakjun/github-action-test
+- frontend github actions test 레포: https://github.com/bsideproject/11-02-frontend/tree/test/github-action
 
-### github action 를 이해하기 좋은 글
-- https://www.daleseo.com/github-actions-basics/
+**Github Actions 를 활용한 CI/CD 구조** 
+- github actions 을 활용한 CI/CD 의 전체적인 flow
+<img width="974" alt="image" src="https://user-images.githubusercontent.com/49400477/175823083-264b1ec5-8872-4ed2-853c-5f85a669cb3d.png">
 
-### github action, ncp(naver cloud platfrom) 활용하여 ci/cd 구축 시도
-1. 기존 github action, aws의 ci/cd 과정을 참고하여 
-깃헙 액션에서 소스코드를 빌드하여 빌드된 파일을 ncp 오브젝트 저장소에 올리고 ncp sourceDeploy 에서 빌드된 파일을 ncp 서버인스턴스에 배포하는 식으로 하면 될거라고 생각했다.
-![image](https://user-images.githubusercontent.com/49400477/175364751-cfc8c7d8-1e47-4352-b573-7b9d1b30d5af.png)
+**위 플로우를 실행시키기 위한 yml 파일 구조** 
+```
+- 코드 변화 감지(트리거 역할)
+ 
+- 수행할 작업들(jobs)
+  - build 작업
+    -  build 를 진행할 환경
+    -  build 를 위한 step 들
+    
+  - deploy 작업
+    - deploy 를 진행할 환경 
+    - deploy 를 위한 step 들 
+```
 
-2. 또한 ncp sourceDeploy 문서를 확인하면 ncp 오브젝트 스토리지에 업로드된 소스코드 압축파일을 자동으로 다운받아 배포해준다는 내용이 있어 가능할 것이라고 생각했다. 
-![image](https://user-images.githubusercontent.com/49400477/175365811-c3364d56-8f17-4497-88b8-ebb1a6670e0a.png)
+**Actions?** 
+  - Github Actions 반복 단계를 재사용하기 용이하도록 제공되는 일종의 작업 공유 메커니즘. 젠킨스로 치면 유용한 플러그인 같은 것.
+해당 테스트에서도 여러 actions 를 사용. 
+    - actions/checkout@v3: 깃헙 레포에 소스코드를 Github Actions 실행환경으로 가져오기 위한 actions
+    - actions/setup-java@v2: Github Actions 실행환경에 자바를 설치해주는 actions
+    - docker/login-action@v1: 도커 hub 에 로그인하기위한 actions
+  
+**Github Actions Runners?**
+  - GitHub Actions workflow으로부터 job을 실행시켜주는 어플리케이션이다. 위 **테스트에서는 deploy 작업을 실행시켜주도록 NCP 서버를 Runner 로 등록**하였다. 배포작업를 NCP 서버(Runner)에서 실행하도록 하여 어플리케이션을 실행시킨다. 
+  - Runner 로 등록된 NCP 서버는 GitHub Actions workflow 를 listen 하고 있다가 job 을 진행할 환경이 자신이라면(runs-on) 
+  해당 job 의 step 들을 자신의 서버에서 실행시킨다. 
+   
+**전체 코드** 
+```
+name: CI
 
-3. 하지만 깃헙 액션에서 sourceDeploy 에게 2번과정을 실행시키는 요청에 대한 내용은 문서에서 찾을 수 없었다. 아마 ncp 에서는 깃헙 액션을 활용하여 1번과 같은 배포플로우를 지원하는 구조는 아닌 것같다.
-조사를 좀더 해보니 이미 나와 같은 문제를 겪은 사람도 있었다. 내용을 읽어보니 k8s 로는 깃헙 액션을 활용해서 ci/cd 구축이 가능한 것으로 보인다. 다른방법으로 시도를 해봐야겠다.
-    - https://jgrammer.tistory.com/entry/%EB%AC%B4%EC%8B%A0%EC%82%AC-%EC%8A%A4%ED%86%A0%EC%96%B4-watcher-CICD-%EB%8F%84%EC%9E%85%EA%B8%B0
+## 트리거 설정
+  - 마스터 브랜치에 push, pr 발생하면 jobs 실행.
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+## build 과정
+  - ubuntu-latest 을 실행환경으로 설정
+  - 깃헙 레포의 소스코드를 ubuntu-latest 환경으로 체크아웃
+  - 스프링 프로젝트 빌드를 위한 JDK 11 설치
+  - 빌드, 도커 헙 로그인 및 빌드된 결과물로 이미지 생성 & 푸쉬
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run build
+        run: ./gradlew clean build -x test
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
+
+      - name: Docker build & push to push
+        run: |
+          docker build -t ${{secrets.DOCKER_REPO}} .
+          docker tag ${{secrets.DOCKER_REPO}}:latest ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}:latest
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}
+          
+## deploy 과정
+  - needs 를 build 로 두어 build 이후에 실행되도록 의존관계 설정
+  - runs-on 를 self-hosted, label-go 설정. ncp 서버를 깃헙 러너로 label-go 라벨과 함께 등록했기 때문에 해당 작업(deploy)이 ncp 서버에서 실행  
+  - 도커 로그인 및 이미 띄워진 컨테이너 삭제
+  - 위 build 과정에서 push 된 이미지 pull 및 컨테이너 실행
+  deploy:
+    needs: build
+    name: Deploy
+    runs-on: [ self-hosted, label-go ]
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
+      - name: Docker run
+        run: |
+          RESULT=$(docker ps -q -a)
+          if [ -z "$RESULT" ];
+          then
+            echo $RESULT
+          else
+            docker rm -f $(docker ps -q -a)
+          fi
+          docker pull ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}
+          docker run -itd -p 80:8080 --name hjspring ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.DOCKER_REPO}}:latest
+
+```
 
 
-### 시도는 해봤으니 기록은 남긴다.
-1. workflow trigger
-    - master 브랜치에 push, pr 발생시 jobs 의 step 실행된다. 2번 각 step 은필요하다면 병렬 실행, 의존관계 설정해서 실행도 가능하다.
-    ```
-    on:
-      push:
-        branches: [ "master" ]
-      pull_request:
-        branches: [ "master" ]
-    ```
+**테스트** 
+  - **소스 코드 Push 이후 자동으로 빌드 배포 진행**
+    <img width="899" alt="image" src="https://user-images.githubusercontent.com/49400477/175824471-5fdd3518-2e5b-4b45-9c83-772de8ae486d.png">
+    <img width="1193" alt="image" src="https://user-images.githubusercontent.com/49400477/175825120-0f315f14-50ea-4730-a301-989fd7a31df3.png">
 
-2. project build
-    ```
-    # 해당 액션 job 은 ubuntu-18.04 에서 실행된다. 해당 CI 가 실행되는 서버를 설정하는 것
-    jobs:
-      build:
-        runs-on: ubuntu-18.04
+  - **배포 후 도커 컨테이너 및 어플리케이션 실행 확인** 
+    <img width="1001" alt="image" src="https://user-images.githubusercontent.com/49400477/175825012-e983f6ef-0ad1-448b-8846-0455bc508d30.png">
 
-        steps:
-          # Checkout 액션을 사용(actions/checkout@v3)하면 간편하게 코드 저장소로 부터 CI 서버로 코드를 내려받을 수 있다. 즉 필수과정이다.
-          - uses: actions/checkout@v3
+  
 
-          # 자바 JDK 11 설치
-          - name: Set up JDK 11
-            uses: actions/setup-java@v2
-            with:
-              java-version: '11'
-              distribution: 'adopt'
 
-          # chmod +x 로 gradlew 에 실행권한 추가
-          - name: Grant execute permission for gradlew
-            run: chmod +x gradlew
 
-          # 빌드 실행
-          - name: Run build
-            run: ./gradlew clean build -x test
-    ```
-3. ncp object storage 에 build 파일 zip 으로 압축하여 업로드 
-    ```
-          # $GITHUB_SHA 라는 변수는 Github 자체에서 커밋마다 생성하는 랜덤한 변수값이다. 업로드시 빌드파일이 같은이름으로 충돌되지않기 위해 사용한다. 
-          - name: Make zip file
-            run: zip -r ./$GITHUB_SHA.zip .
-            shell: bash
 
-          # 신기하게도 NCP 에서 cli 명령어는 aws 를 사용한다. 빌드 파일을 NCP 오브젝트 스토리지에 업로드한다. 
-          - name: Upload build file to NCP
-            env:
-              AWS_ACCESS_KEY_ID:
-              AWS_SECRET_ACCESS_KEY:
-              AWS_REGION: kr
-            run: aws --endpoint-url=https://kr.object.ncloudstorage.com s3 cp ./$GITHUB_SHA.zip s3://hakjun-bucket/
-    ```
 
-4. 업로드 후 ncp sourceDeploy 에 요청을 보내 ncp object storage 업로드 해놨던 zip 파일로 지정된 서버에서 배포 실행. 
-    ```
-    방법 NOT FOUND
-    ```
+
+
